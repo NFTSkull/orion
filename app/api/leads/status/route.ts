@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStore } from '@/lib/store';
 import { ChangeLeadStatusSchema } from '@/lib/validation/lead';
+import { ZodError } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,22 +12,22 @@ export async function POST(request: NextRequest) {
     await store.changeStatus(validatedData);
     
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
         { error: 'Datos inválidos', details: error.errors },
         { status: 422 }
       );
     }
     
-    if (error.message.includes('Invalid status transition')) {
+    if (error instanceof Error && error.message.includes('Invalid status transition')) {
       return NextResponse.json(
         { error: 'Transición de estado no permitida' },
         { status: 422 }
       );
     }
     
-    if (error.message.includes('not found')) {
+    if (error instanceof Error && error.message.includes('not found')) {
       return NextResponse.json(
         { error: 'Recurso no encontrado' },
         { status: 404 }

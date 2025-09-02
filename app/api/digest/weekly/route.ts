@@ -3,6 +3,15 @@ import { getServiceClient } from '@/lib/supabaseServer';
 import { renderWeeklyDigest } from '@/lib/templates';
 import { getWeekStart, getWeekEnd } from '@/lib/time';
 
+interface Tenant {
+  id: string;
+  name: string;
+}
+
+interface Payment {
+  amount_cents: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -31,7 +40,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const tenantData = tenant as any;
+    const tenantData = tenant as Tenant;
 
     // Calcular semana actual
     const weekStart = getWeekStart();
@@ -68,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     const leadsWeek = leadsResult.count || 0;
     const bookingsWeek = bookingsResult.count || 0;
-    const paidAmountWeekMXN = ((paymentsResult.data as any[]) || []).reduce((sum, p) => sum + p.amount_cents, 0);
+    const paidAmountWeekMXN = ((paymentsResult.data as Payment[]) || []).reduce((sum, p) => sum + p.amount_cents, 0);
 
     // Calcular conversión
     let conversionPct = 0;
@@ -80,14 +89,14 @@ export async function GET(request: NextRequest) {
         .eq('tenant_id', tenantData.id)
         .gte('created_at', weekStart.toISOString())
         .lte('created_at', weekEnd.toISOString())
-        .in('id', (supabase
+        .in('id', supabase
           .from('payments')
           .select('lead_id')
           .eq('tenant_id', tenantData.id)
           .eq('status', 'paid')
           .gte('created_at', weekStart.toISOString())
           .lte('created_at', weekEnd.toISOString())
-        ) as any);
+        );
       
       conversionPct = Math.round((leadsWithPayments || 0) / leadsWeek * 100);
     }
@@ -112,7 +121,7 @@ export async function GET(request: NextRequest) {
       message
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in weekly digest:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
