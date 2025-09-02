@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'ORION - Sistema de Gestión de Leads',
   description: 'Sistema completo de gestión de leads, automatización y pagos con Next.js, Supabase y Stripe',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
