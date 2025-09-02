@@ -37,7 +37,8 @@ export default function Dashboard() {
     if (tenantCookie) {
       const slug = tenantCookie.split('=')[1];
       setTenantSlug(slug);
-      fetchMetrics(slug);
+      // Por ahora, no cargar métricas automáticamente para evitar problemas de conexión
+      setLoading(false);
     } else {
       setLoading(false);
     }
@@ -204,6 +205,12 @@ export default function Dashboard() {
         <div className="mt-8 bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Acciones rápidas</h3>
           <div className="flex flex-wrap gap-4">
+            <button 
+              onClick={() => fetchMetrics(tenantSlug)}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              Cargar Métricas
+            </button>
             <a 
               href="/playground" 
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
