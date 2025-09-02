@@ -3,8 +3,36 @@ import { getServiceClient } from '@/lib/supabaseServer';
 import { renderReminderMessage } from '@/lib/templates';
 import { formatDate } from '@/lib/time';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
+    // 1) Tomar el token del header o del query
+    const url = new URL(request.url);
+    const token =
+      request.headers.get('x-cron-token') ??
+      url.searchParams.get('x-cron-token') ??
+      null;
+
+    // 2) Validar que exista CRON_TOKEN en runtime
+    if (!process.env.CRON_TOKEN) {
+      console.error('[RENDER] CRON_TOKEN missing');
+      return NextResponse.json(
+        { error: 'Server misconfigured' },
+        { status: 500 }
+      );
+    }
+
+    // 3) Autorizar
+    if (!token || token !== process.env.CRON_TOKEN) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 4) ---- LÓGICA EXISTENTE ----
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
