@@ -82,21 +82,24 @@ export async function GET(request: NextRequest) {
     // Calcular conversión
     let conversionPct = 0;
     if (leadsWeek > 0) {
-      // Leads con pagos pagados en esta semana
+      // Obtener leads con pagos pagados en esta semana
+      const { data: paidPayments } = await supabase
+        .from('payments')
+        .select('lead_id')
+        .eq('tenant_id', tenantData.id)
+        .eq('status', 'paid')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      const paidLeadIds = (paidPayments || []).map(p => p.lead_id).filter(Boolean);
+      
       const { count: leadsWithPayments } = await supabase
         .from('leads')
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenantData.id)
         .gte('created_at', weekStart.toISOString())
         .lte('created_at', weekEnd.toISOString())
-        .in('id', supabase
-          .from('payments')
-          .select('lead_id')
-          .eq('tenant_id', tenantData.id)
-          .eq('status', 'paid')
-          .gte('created_at', weekStart.toISOString())
-          .lte('created_at', weekEnd.toISOString())
-        );
+        .in('id', paidLeadIds);
       
       conversionPct = Math.round((leadsWithPayments || 0) / leadsWeek * 100);
     }
